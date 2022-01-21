@@ -1,0 +1,56 @@
+service:
+  name: challengeserverless
+
+plugins:
+  - serverless-offline
+  - serverless-webpack
+  - serverless-dynamodb-local
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+  dynamodb:
+    stages:
+      - dev
+      - local
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+functions:
+  createTodos:
+    handler: "src/functions/createTodos.handle"
+    events:
+      - http:
+          path: /createTodos/{user_id}
+          method: POST
+          cors: true
+
+  getTodos:
+    handler: src/functions/getTodos.handle
+    events:
+      - http:
+          path: /getTodos/{user_id}
+          method: GET
+          cors: true
+
+resources:
+  Resources:
+    dbTodos:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Todos
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
